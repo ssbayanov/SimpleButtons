@@ -1,0 +1,20 @@
+#SButtons
+sbuttons	KEYWORD1
+SButtons	KEYWORD1
+update	KEYWORD2
+addButton	KEYWORD2
+count	KEYWORD2
+at	KEYWORD2
+atPin	KEYWORD2
+
+
+#SButton
+SButton	KEYWORD1
+reset	KEYWORD2
+check	KEYWORD2
+setClickDelay	KEYWORD2
+isPressed	KEYWORD2
+isClicked	KEYWORD2
+pin	KEYWORD2
+
+
