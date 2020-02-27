@@ -8,88 +8,143 @@ SButtons::SButtons() {
 
 void SButtons::update()
 {
-  SButton *ptr = firstButton;
+  AbstractButton *ptr = firstButton;
+ 
   while (ptr != NULL) {
     ptr->check();
     ptr = ptr->next;
   }
 }
 
-SButton *SButtons::addButton(uint8_t pin, int pressState)
-{
-  _count++;
-  SButton *newButton = new SButton(pin, pressState);
-  newButton->reset();
-  if (firstButton == NULL) {
-    firstButton = newButton;
-  }
-  else {
-    lastButton->next = newButton;
-  }
 
-  lastButton = newButton;
-
-  return newButton;
+uint8_t SButtons::addButton(uint8_t pin, int pressState, int pMode)
+{  
+  SButton *newButton = new SButton( _count++, pin, pressState, pMode);
+  insert(newButton);
+  return newButton->id();
 }
 
-SButtons &SButtons::count()
+uint8_t SButtons::addAnalog(uint8_t pin, int maxValue, int lowValue)
+{
+  AButton *newButton = new AButton( _count++, pin, maxValue, lowValue);
+  insert(newButton);
+  return newButton->id();
+}
+
+#ifdef ESP32
+uint8_t SButtons::addTouch(uint8_t pin, int pressThreshold)
+{
+  TButton *newButton = new TButton( _count++, pin, pressThreshold);
+  insert(newButton);
+  return newButton->id();
+}
+#endif
+
+uint8_t SButtons::count()
 {
   return _count;
 }
 
-SButton *SButtons::at(uint8t pos){
-  SButton* tmp = firstButton;
-  for(int i = 0; i < pos; i++){
-      tmp = tmp->next;
-      if(tmp == NULL)
-        tmp = firstButton;
-  }
-  
-  return *tmp;
-}
-
-SButton *SButtons::atPin(int pin){
-  SButton* tmp = firstButton;
+AbstractButton *SButtons::getButton(uint8_t ID){
+  AbstractButton* btn = firstButton;
   for(int i = 0; i < _count; i++){
-    if(tmp->pin() == pin)
-      return *tmp
+    if(btn->id() == ID)
+      return btn;
 
-    tmp = tmp->next;
+    btn = btn->next;
   }
 
-  return *tmp;
+  return NULL;
 }
 
-SButton::SButton(uint8_t pin, int pressState, int pMode)
+bool SButtons::isPressed(uint8_t ID){
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    return btn->isPressed();
+  return false;
+}
+
+bool SButtons::isClicked(uint8_t ID){
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    return btn->isClicked();
+  return false;
+}
+bool SButtons::isLongClicked(uint8_t ID){
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    return btn->isLongClicked();
+  return false;
+}
+
+void SButtons::reset(uint8_t ID){
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    return btn->reset();
+}
+
+void SButtons::setClickDelay(uint8_t ID, uint64_t delay){
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    return btn->setClickDelay(delay);
+}
+
+void SButtons::setLongClickDelay(uint8_t ID, uint64_t delay){
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    return btn->setLongClickDelay(delay);
+}
+
+void SButtons::insert(AbstractButton *btn)
 {
-  pinMode(pin, pMode);
-  buttonLastPressed = 0;
+
+  if (firstButton == NULL) {
+    firstButton = btn;
+  }
+  else {
+    lastButton->next = btn;
+  }
+
+  lastButton = btn;
+}
+
+AbstractButton::AbstractButton(uint8_t ID)
+{
+  _buttonLastPressed = 0;
   _isPressed = false;
   _isClicked = false;
-  _buttonPin = pin;
-
-  _pressState = pressState;
-  _clickDelay = 100;
+  _ID = ID;
+  _pressDelay = 100;
+  _clickDelay = 300;
+  _longClickDelay = 750;
 
   next = NULL;
-  
 }
 
-void SButton::check()
+bool AbstractButton::isPressed(){
+  return false;
+}
+
+void AbstractButton::check()
 {
-  if (digitalRead(_buttonPin) == _pressState) {
+  if (isPressed()) {
     if (!_isPressed) {
-      buttonLastPressed = millis();
+      _buttonLastPressed = millis();
       _isPressed = true;
     }
   }
   else {
     if (_isPressed) {
-      if (millis() - buttonLastPressed > _clickDelay) {
+      if (millis() - _buttonLastPressed < _pressDelay){
+        reset();
+        return;
+      }
+        
+      if (millis() - _buttonLastPressed > _clickDelay) {
         _isClicked = true;
         _isPressed = false;
       }
-      if (millis() - buttonLastPressed > _clickDelay) {
+      if (millis() - _buttonLastPressed > _longClickDelay) {
         _isClicked = false;
         _isLongClicked = true;
         _isPressed = false;
@@ -98,30 +153,53 @@ void SButton::check()
   }
 }
 
-void SButton::reset()
+void AbstractButton::reset()
 {
   _isPressed = 0;
   _isClicked = false;
   _isPressed = false;
 }
 
-bool SButton::isPressed()
-{
-  return _isPressed;
-}
-
-bool SButton::isClicked()
+bool AbstractButton::isClicked()
 {
   bool clicked = _isClicked;
   _isClicked = false;
   return clicked;
 }
 
-bool SButton::isLongClicked()
+bool AbstractButton::isLongClicked()
 {
   bool clicked = _isLongClicked;
   _isLongClicked = false;
   return clicked;
+}
+
+uint8_t AbstractButton::id()
+{
+  return _ID;
+}
+
+void AbstractButton::setClickDelay(uint64_t delay)
+{
+  _clickDelay = delay;
+}
+
+void AbstractButton::setLongClickDelay(uint64_t delay)
+{
+  _longClickDelay = delay;
+}
+
+SButton::SButton(uint8_t ID, uint8_t pin, int pressState, int pMode) :
+AbstractButton(ID)
+{
+  pinMode(pin, pMode);
+
+  _pressState = pressState;
+}
+
+bool SButton::isPressed()
+{
+  return digitalRead(_buttonPin) == _pressState;
 }
 
 uint8_t SButton::pin()
@@ -129,12 +207,81 @@ uint8_t SButton::pin()
   return _buttonPin;
 }
 
-void SButton::setClickDelay(uint64t delay)
+AButton::AButton(uint8_t ID, uint8_t pin, int maxValue, int minValue) :
+AbstractButton(ID)
 {
-  _clickDelay = delay;
+    _maxValue = maxValue;
+    _minValue = minValue;
+
+    _buttonPin = pin;
 }
 
-void SButton::setLongClickDelay(uint64t delay)
+bool AButton::isPressed()
 {
-  _longClickDelay = delay;
+  int value = analogRead(_buttonPin);
+  return (value < _maxValue) && (value > _minValue);
 }
+
+uint8_t AButton::pin()
+{
+  return _buttonPin;
+}
+
+#ifdef ESP32
+TButton::TButton(uint8_t ID, uint8_t pin, int pressThreshold):
+AbstractButton(ID)
+{
+  switch(pin){
+    case 4:
+      _touchPort = T0;
+      break;
+    case 0:
+      _touchPort = T1;
+      break;
+    case 2:
+      _touchPort = T2;
+      break;
+    case 15:
+      _touchPort = T3;
+      break;
+    case 13:
+      _touchPort = T4;
+      break;
+    case 12:
+      _touchPort = T5;
+      break;
+    case 14:
+      _touchPort = T6;
+      break;
+    case 27:
+      _touchPort = T7;
+      break;
+    case 33:
+      _touchPort = T8;
+      break;
+    case 32:
+      _touchPort = T9;
+      break;
+  }
+  _pressThreshold = pressThreshold;
+  _lastValue = touchRead(_touchPort);
+}
+
+bool TButton::isPressed()
+{
+  
+  uint8_t newValue = touchRead(_touchPort);
+  float delta = 0.01 * abs(30 - abs(newValue - _lastValue));
+  //if(delta > 1)
+  _lastValue = (newValue * delta) + (_lastValue * (1 - delta));
+
+
+  Serial.print("Touch filtred value: "); Serial.println(_lastValue);
+  return (_lastValue < _pressThreshold);
+}
+
+uint8_t TButton::pin()
+{
+  return _buttonPin;
+}
+#endif

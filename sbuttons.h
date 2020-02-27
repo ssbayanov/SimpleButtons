@@ -6,37 +6,94 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-#include "Arduino.h"
+#include <Arduino.h>
 
-class SButton
+// Abstract button class
+class AbstractButton
 {
 public:
-    SButton(uint8_t pin, int pressState = LOW, int pinMode = INPUT);
+    AbstractButton(uint8_t ID);
     void check();
-
-    bool isPressed();
+    virtual bool isPressed();
     bool isClicked();
     bool isLongClicked();
-    uint8_t pin();
 
     void reset();
 
-    void setClickDelay(uint64t delay);
-    void setLongClickDelay(uint64t delay);
+    void setClickDelay(uint64_t delay);
+    void setLongClickDelay(uint64_t delay);
 
-    SButton *next;
-private:
-    unsigned long buttonLastPressed;
+    uint8_t id();
+
+    AbstractButton *next;
+    
+protected:
+    uint8_t _ID;
+
+    unsigned long _buttonLastPressed;
     bool _isPressed;
     bool _isClicked;
     bool _isLongClicked;
-    uint8_t _buttonPin;
+    
 
-    int _pressState;
+    uint64_t _pressDelay;
     uint64_t _clickDelay;
     uint64_t _longClickDelay;
 };
 
+// Classic button or touch button on TTP223
+class SButton : public AbstractButton
+{
+public:
+    SButton(uint8_t ID, uint8_t pin, int pressState = LOW, int pMode = INPUT);
+
+    bool isPressed();
+
+    uint8_t pin();
+
+private:
+    
+    uint8_t _pressState;
+
+    uint8_t _buttonPin;
+};
+
+// Class of analog button
+class AButton : public AbstractButton
+{
+public:
+    AButton(uint8_t ID, uint8_t pin, int maxValue = 0, int minValue = 1024);
+
+    bool isPressed();
+
+    uint8_t pin();
+
+private:
+    
+    uint8_t _maxValue;
+    uint8_t _minValue;
+
+    uint8_t _buttonPin;
+};
+
+#ifdef ESP32
+// Touch buttons for ESP32
+class TButton : public AbstractButton
+{
+public:
+    TButton(uint8_t ID, uint8_t pin, int pressThreshold);
+    bool isPressed();
+
+    uint8_t pin();
+
+private:    
+    uint8_t _pressThreshold;
+    uint8_t _touchPort;
+    uint8_t _lastValue;
+
+    uint8_t _buttonPin;
+};
+#endif
 
 class SButtons
 {
@@ -44,16 +101,33 @@ public:
     SButtons();
 
     void update();
-    SButton *addButton(uint8_t pin, int pressState = LOW);
-    void addButton(SButton *button);
-    SButton *at(uint8t pos);
-    SButton *atPin(int pin);
 
-    int count();
+    uint8_t addButton(uint8_t pin, int pressState = LOW, int pMode = INPUT_PULLUP);
 
-    SButton *firstButton, *lastButton;
+    uint8_t addAnalog(uint8_t pin, int maxValue = 0, int lowValue = 1024);
+    
 
-    uint8t _count;
+    #ifdef ESP32
+    uint8_t addTouch(uint8_t pin, int pressThreshold = 50);
+    #endif
+
+    uint8_t count();
+
+    bool isPressed(uint8_t pin);
+    bool isClicked(uint8_t pin);
+    bool isLongClicked(uint8_t pin);
+
+    void reset(uint8_t pin);
+
+    void setClickDelay(uint8_t pin, uint64_t delay);
+    void setLongClickDelay(uint8_t pin, uint64_t delay);
+
+    AbstractButton *getButton(uint8_t pin);
+
+private:
+    AbstractButton *firstButton, *lastButton;
+    uint8_t _count;
+    void insert(AbstractButton *btn);
 };
 
 
