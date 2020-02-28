@@ -62,7 +62,7 @@ private:
 class AButton : public AbstractButton
 {
 public:
-    AButton(uint8_t ID, uint8_t pin, int maxValue = 0, int minValue = 1024);
+    AButton(uint8_t ID, uint8_t pin, int minValue = 0, int maxValue = 1024);
 
     bool isPressed();
 
@@ -70,8 +70,8 @@ public:
 
 private:
     
-    uint8_t _maxValue;
-    uint8_t _minValue;
+    int _maxValue;
+    int _minValue;
 
     uint8_t _buttonPin;
 };
@@ -104,7 +104,7 @@ public:
 
     uint8_t addButton(uint8_t pin, int pressState = LOW, int pMode = INPUT_PULLUP);
 
-    uint8_t addAnalog(uint8_t pin, int maxValue = 0, int lowValue = 1024);
+    uint8_t addAnalog(uint8_t pin, int minValue = 0, int maxValue = 1024);
     
 
     #ifdef ESP32

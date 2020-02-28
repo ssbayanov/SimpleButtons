@@ -24,9 +24,9 @@ uint8_t SButtons::addButton(uint8_t pin, int pressState, int pMode)
   return newButton->id();
 }
 
-uint8_t SButtons::addAnalog(uint8_t pin, int maxValue, int lowValue)
+uint8_t SButtons::addAnalog(uint8_t pin, int minValue, int maxValue)
 {
-  AButton *newButton = new AButton( _count++, pin, maxValue, lowValue);
+  AButton *newButton = new AButton( _count++, pin, minValue, maxValue);
   insert(newButton);
   return newButton->id();
 }
@@ -49,7 +49,10 @@ AbstractButton *SButtons::getButton(uint8_t ID){
   AbstractButton* btn = firstButton;
   for(int i = 0; i < _count; i++){
     if(btn->id() == ID)
-      return btn;
+    {
+	  //Serial.println("Button find");
+      return btn;      
+	}
 
     btn = btn->next;
   }
@@ -193,13 +196,17 @@ SButton::SButton(uint8_t ID, uint8_t pin, int pressState, int pMode) :
 AbstractButton(ID)
 {
   pinMode(pin, pMode);
+  _buttonPin = pin;
 
   _pressState = pressState;
 }
 
 bool SButton::isPressed()
 {
-  return digitalRead(_buttonPin) == _pressState;
+	uint8_t value = digitalRead(_buttonPin);
+	//if(value)
+		//Serial.println(value);
+  return value == _pressState;
 }
 
 uint8_t SButton::pin()
@@ -207,11 +214,12 @@ uint8_t SButton::pin()
   return _buttonPin;
 }
 
-AButton::AButton(uint8_t ID, uint8_t pin, int maxValue, int minValue) :
+AButton::AButton(uint8_t ID, uint8_t pin, int minValue, int maxValue) :
 AbstractButton(ID)
 {
+	_minValue = minValue;
     _maxValue = maxValue;
-    _minValue = minValue;
+    //Serial.print(_minValue);Serial.print(" ");Serial.println(_maxValue);
 
     _buttonPin = pin;
 }
@@ -219,7 +227,9 @@ AbstractButton(ID)
 bool AButton::isPressed()
 {
   int value = analogRead(_buttonPin);
-  return (value < _maxValue) && (value > _minValue);
+  int binvalue = (value <= _maxValue) && (value >= _minValue);
+  //Serial.print(_maxValue);Serial.print(" ");Serial.print(_minValue);Serial.print(" ");Serial.print(value);Serial.print(" "); Serial.println(binvalue);
+  return binvalue;
 }
 
 uint8_t AButton::pin()
