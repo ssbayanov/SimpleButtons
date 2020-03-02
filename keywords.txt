@@ -1,16 +1,31 @@
 #SButtons
 sbuttons	KEYWORD1
 SButtons	KEYWORD1
+SButton	KEYWORD1
+TButton	KEYWORD1
+AButton	KEYWORD1
+
+#
 update	KEYWORD2
+check	KEYWORD2
+count	KEYWORD2
+reset	KEYWORD2
+pin	KEYWORD2
+
+# Add buttons
 addButton	KEYWORD2
 addTouch	KEYWORD2
 addAnalog	KEYWORD2
-count	KEYWORD2
-reset	KEYWORD2
-check	KEYWORD2
-setClickDelay	KEYWORD2
+
+# Get state
 isPressed	KEYWORD2
 isClicked	KEYWORD2
-pin	KEYWORD2
+isLongClicked	KEYWORD2
 
-
+# Setters
+setClickDelay	KEYWORD2
+setLongClickDelay	KEYWORD2
+setPressCallback	KEYWORD2
+setReleaseCallback	KEYWORD2
+setClickCallback	KEYWORD2
+setLongClickCallback	KEYWORD2

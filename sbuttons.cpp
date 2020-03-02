@@ -60,6 +60,19 @@ AbstractButton *SButtons::getButton(uint8_t ID){
   return NULL;
 }
 
+void SButtons::insert(AbstractButton *btn)
+{
+
+  if (firstButton == NULL) {
+    firstButton = btn;
+  }
+  else {
+    lastButton->next = btn;
+  }
+
+  lastButton = btn;
+}
+
 bool SButtons::isPressed(uint8_t ID){
   AbstractButton *btn = getButton(ID);
   if(btn)
@@ -98,17 +111,58 @@ void SButtons::setLongClickDelay(uint8_t ID, uint64_t delay){
     return btn->setLongClickDelay(delay);
 }
 
-void SButtons::insert(AbstractButton *btn)
+void SButtons::setPressCallback(uint8_t ID, void (*callback)())
 {
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    btn->setPressCallback(callback);
+}
 
-  if (firstButton == NULL) {
-    firstButton = btn;
-  }
-  else {
-    lastButton->next = btn;
-  }
+void SButtons::setReleaseCallback(uint8_t ID, void (*callback)())
+{
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    btn->setReleaseCallback(callback);
+}
 
-  lastButton = btn;
+void SButtons::setClickCallback(uint8_t ID, void (*callback)())
+{
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    btn->setClickCallback(callback);
+}
+
+void SButtons::setLongClickCallback(uint8_t ID, void (*callback)())
+{
+  AbstractButton *btn = getButton(ID);
+  if(btn)
+    btn->setLongClickCallback(callback);
+}
+
+/**
+ * 
+ * Abstract buttons
+ *  
+ */
+
+void AbstractButton::setPressCallback(void (*callback)())
+{
+_pressCallback = callback;
+}
+
+void AbstractButton::setReleaseCallback(void (*callback)())
+{
+_releaseCallback = callback;
+}
+
+void AbstractButton::setClickCallback(void (*callback)())
+{
+_clickCallback = callback;
+}
+
+void AbstractButton::setLongClickCallback(void (*callback)())
+{
+_longClickCallback = callback;
 }
 
 AbstractButton::AbstractButton(uint8_t ID)
@@ -120,6 +174,11 @@ AbstractButton::AbstractButton(uint8_t ID)
   _pressDelay = 100;
   _clickDelay = 300;
   _longClickDelay = 750;
+
+  _pressCallback = NULL;
+  _releaseCallback = NULL;
+  _clickCallback = NULL;
+  _longClickCallback = NULL;
 
   next = NULL;
 }
@@ -134,6 +193,9 @@ void AbstractButton::check()
     if (!_isPressed) {
       _buttonLastPressed = millis();
       _isPressed = true;
+
+      if(_pressCallback != NULL)
+        _pressCallback();
     }
   }
   else {
@@ -142,15 +204,24 @@ void AbstractButton::check()
         reset();
         return;
       }
-        
+      
+      if(_releaseCallback != NULL)
+        _releaseCallback();
+
       if (millis() - _buttonLastPressed > _clickDelay) {
         _isClicked = true;
         _isPressed = false;
+
+        if(_clickCallback != NULL)
+          _clickCallback();
       }
+
       if (millis() - _buttonLastPressed > _longClickDelay) {
         _isClicked = false;
         _isLongClicked = true;
         _isPressed = false;
+        if(_longClickCallback != NULL)
+          _longClickCallback();
       }
     }
   }
@@ -192,8 +263,23 @@ void AbstractButton::setLongClickDelay(uint64_t delay)
   _longClickDelay = delay;
 }
 
+/**
+ * 
+ * Simple button mechanic or TTP223
+ *  
+ */
+
 SButton::SButton(uint8_t ID, uint8_t pin, int pressState, int pMode) :
 AbstractButton(ID)
+{
+  pinMode(pin, pMode);
+  _buttonPin = pin;
+
+  _pressState = pressState;
+}
+
+SButton::SButton(uint8_t pin, int pressState, int pMode) :
+AbstractButton(0)
 {
   pinMode(pin, pMode);
   _buttonPin = pin;
@@ -219,7 +305,15 @@ AbstractButton(ID)
 {
 	_minValue = minValue;
     _maxValue = maxValue;
-    //Serial.print(_minValue);Serial.print(" ");Serial.println(_maxValue);
+
+    _buttonPin = pin;
+}
+
+AButton::AButton(uint8_t pin, int minValue, int maxValue) :
+AbstractButton(0)
+{
+	_minValue = minValue;
+    _maxValue = maxValue;
 
     _buttonPin = pin;
 }
@@ -241,40 +335,53 @@ uint8_t AButton::pin()
 TButton::TButton(uint8_t ID, uint8_t pin, int pressThreshold):
 AbstractButton(ID)
 {
-  switch(pin){
-    case 4:
-      _touchPort = T0;
-      break;
-    case 0:
-      _touchPort = T1;
-      break;
-    case 2:
-      _touchPort = T2;
-      break;
-    case 15:
-      _touchPort = T3;
-      break;
-    case 13:
-      _touchPort = T4;
-      break;
-    case 12:
-      _touchPort = T5;
-      break;
-    case 14:
-      _touchPort = T6;
-      break;
-    case 27:
-      _touchPort = T7;
-      break;
-    case 33:
-      _touchPort = T8;
-      break;
-    case 32:
-      _touchPort = T9;
-      break;
-  }
+  _touchPort = pinToTouchPort(pin);
   _pressThreshold = pressThreshold;
   _lastValue = touchRead(_touchPort);
+}
+
+TButton::TButton(uint8_t pin, int pressThreshold):
+AbstractButton(0)
+{
+  _touchPort = pinToTouchPort(pin);`
+  _pressThreshold = pressThreshold;
+  _lastValue = touchRead(_touchPort);
+}
+
+uint8_t TButton::pinToTouchPort(uint8_t pin){
+  switch(pin){
+    case 4:
+      return = T0;
+      break;
+    case 0:
+      return = T1;
+      break;
+    case 2:
+      return = T2;
+      break;
+    case 15:
+      return = T3;
+      break;
+    case 13:
+      return = T4;
+      break;
+    case 12:
+      return = T5;
+      break;
+    case 14:
+      return = T6;
+      break;
+    case 27:
+      return = T7;
+      break;
+    case 33:
+      return = T8;
+      break;
+    case 32:
+      return = T9;
+      break;
+  }
+  return -1;
 }
 
 bool TButton::isPressed()

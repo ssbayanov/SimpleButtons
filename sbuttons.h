@@ -23,6 +23,11 @@ public:
     void setClickDelay(uint64_t delay);
     void setLongClickDelay(uint64_t delay);
 
+    void setPressCallback(void (*callback)());
+    void setReleaseCallback(void (*callback)());
+    void setClickCallback(void (*callback)());
+    void setLongClickCallback(void (*callback)());
+
     uint8_t id();
 
     AbstractButton *next;
@@ -33,12 +38,18 @@ protected:
     unsigned long _buttonLastPressed;
     bool _isPressed;
     bool _isClicked;
-    bool _isLongClicked;
-    
+    bool _isLongClicked;    
 
     uint64_t _pressDelay;
     uint64_t _clickDelay;
     uint64_t _longClickDelay;
+
+    void (*_pressCallback)();
+    void (*_releaseCallback)();
+    void (*_clickCallback)();
+    void (*_longClickCallback)();
+private:
+    void insert(Abs)
 };
 
 // Classic button or touch button on TTP223
@@ -46,6 +57,7 @@ class SButton : public AbstractButton
 {
 public:
     SButton(uint8_t ID, uint8_t pin, int pressState = LOW, int pMode = INPUT);
+    SButton(uint8_t pin, int pressState = LOW, int pMode = INPUT);
 
     bool isPressed();
 
@@ -63,9 +75,9 @@ class AButton : public AbstractButton
 {
 public:
     AButton(uint8_t ID, uint8_t pin, int minValue = 0, int maxValue = 1024);
+    AButton(uint8_t pin, int minValue = 0, int maxValue = 1024);
 
     bool isPressed();
-
     uint8_t pin();
 
 private:
@@ -82,11 +94,13 @@ class TButton : public AbstractButton
 {
 public:
     TButton(uint8_t ID, uint8_t pin, int pressThreshold);
+    TButton(uint8_t pin, int pressThreshold);
     bool isPressed();
 
     uint8_t pin();
 
-private:    
+private: 
+    uint8_t pinToTouchPort(uint8_t pin);
     uint8_t _pressThreshold;
     uint8_t _touchPort;
     uint8_t _lastValue;
@@ -113,14 +127,19 @@ public:
 
     uint8_t count();
 
-    bool isPressed(uint8_t pin);
-    bool isClicked(uint8_t pin);
-    bool isLongClicked(uint8_t pin);
+    bool isPressed(uint8_t ID);
+    bool isClicked(uint8_t ID);
+    bool isLongClicked(uint8_t ID);
 
-    void reset(uint8_t pin);
+    void reset(uint8_t ID);
 
-    void setClickDelay(uint8_t pin, uint64_t delay);
-    void setLongClickDelay(uint8_t pin, uint64_t delay);
+    void setClickDelay(uint8_t ID, uint64_t delay);
+    void setLongClickDelay(uint8_t ID, uint64_t delay);
+
+    void setPressCallback(uint8_t ID, void (*callback)());
+    void setReleaseCallback(uint8_t ID, void (*callback)());
+    void setClickCallback(uint8_t ID, void (*callback)());
+    void setLongClickCallback(uint8_t ID, void (*callback)());
 
     AbstractButton *getButton(uint8_t pin);
 
@@ -129,7 +148,6 @@ private:
     uint8_t _count;
     void insert(AbstractButton *btn);
 };
-
 
 
 #endif //BUTTON_H
