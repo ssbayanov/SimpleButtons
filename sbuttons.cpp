@@ -16,7 +16,6 @@ void SButtons::update()
   }
 }
 
-
 uint8_t SButtons::addButton(uint8_t pin, int pressState, int pMode)
 {  
   SButton *newButton = new SButton( _count++, pin, pressState, pMode);
