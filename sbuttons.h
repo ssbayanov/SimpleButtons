@@ -14,9 +14,10 @@ class AbstractButton
 public:
     AbstractButton(uint8_t ID);
     void check();
-    virtual bool isPressed();
+    
     bool isClicked();
     bool isLongClicked();
+    bool isPressed();
 
     void reset();
 
@@ -33,9 +34,11 @@ public:
     AbstractButton *next;
     
 protected:
+    virtual bool getPressState();
     uint8_t _ID;
 
     unsigned long _buttonLastPressed;
+    bool _isPress;
     bool _isPressed;
     bool _isClicked;
     bool _isLongClicked;    
@@ -49,7 +52,7 @@ protected:
     void (*_clickCallback)();
     void (*_longClickCallback)();
 private:
-    void insert(Abs)
+    void insert(AbstractButton *btn);
 };
 
 // Classic button or touch button on TTP223
@@ -59,7 +62,7 @@ public:
     SButton(uint8_t ID, uint8_t pin, int pressState = LOW, int pMode = INPUT);
     SButton(uint8_t pin, int pressState = LOW, int pMode = INPUT);
 
-    bool isPressed();
+    bool getPressState();
 
     uint8_t pin();
 
@@ -77,7 +80,7 @@ public:
     AButton(uint8_t ID, uint8_t pin, int minValue = 0, int maxValue = 1024);
     AButton(uint8_t pin, int minValue = 0, int maxValue = 1024);
 
-    bool isPressed();
+    bool getPressState();
     uint8_t pin();
 
 private:
@@ -95,7 +98,7 @@ class TButton : public AbstractButton
 public:
     TButton(uint8_t ID, uint8_t pin, int pressThreshold);
     TButton(uint8_t pin, int pressThreshold);
-    bool isPressed();
+    bool getPressState();
 
     uint8_t pin();
 
