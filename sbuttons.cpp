@@ -163,9 +163,9 @@ AbstractButton::AbstractButton(uint8_t ID)
   _isPressed = false;
   _isClicked = false;
   _ID = ID;
-  _pressDelay = 10;
-  _clickDelay = 50;
-  _longClickDelay = 500;
+  _pressDelay = 50;
+  _clickDelay = 100;
+  _longClickDelay = 750;
 
   _pressCallback = NULL;
   _releaseCallback = NULL;
@@ -215,6 +215,14 @@ void AbstractButton::check()
       if (_releaseCallback != NULL)
         _releaseCallback();
 
+      if (millis() - _buttonLastPressed > _clickDelay)
+      {
+        _isClicked = true;
+
+        if (_clickCallback != NULL)
+          _clickCallback();
+      }
+
       if (millis() - _buttonLastPressed > _longClickDelay)
       {
         _isClicked = false;
@@ -223,13 +231,6 @@ void AbstractButton::check()
         if (_longClickCallback != NULL)
           _longClickCallback();
       }
-      else if (millis() - _buttonLastPressed > _clickDelay)
-      {
-        _isClicked = true;
-
-        if (_clickCallback != NULL)
-          _clickCallback();
-      }      
 
       _isPress = false;
       _isPressed = false;
